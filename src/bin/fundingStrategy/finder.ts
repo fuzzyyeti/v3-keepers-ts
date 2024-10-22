@@ -30,6 +30,13 @@ export async function findHighestFundingRate(
       continue;
     }
     const marketWrapper = new MarketWrapper(market.account);
+    if (
+        (new Decimal(market.account.accounting.skew.toString())
+            .mul(marketWrapper.lastFundingRate().val)
+            .lt(0))) {
+        console.log("Funding rate is for majority. Skip");
+        continue;
+    }
     const fundingRate = marketWrapper.lastFundingRate().val;
     if (Decimal.abs(fundingRate).gt(Decimal.abs(highestAbsoluteFundingRate.value))) {
       highestAbsoluteFundingRate.market = market;
