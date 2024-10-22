@@ -40,6 +40,13 @@ const LEVERAGE = 5;
     const highestFundingRate = await findHighestFundingRate(sdk, exchangeAddress, isTokensOnly);
     if (highestFundingRate.market === undefined) {
       console.log("No market found");
+      await closePosition(
+          connection,
+          sdk,
+          exchangeAddress,
+          fundingStrategySigner,
+          0,
+      );
       return;
     }
     if (

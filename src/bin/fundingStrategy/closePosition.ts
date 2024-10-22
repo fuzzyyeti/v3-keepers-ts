@@ -15,6 +15,7 @@ import {
   parseSize,
 } from "@parcl-oss/v3-sdk";
 import { getPriceFromFeed } from "./utils";
+import Decimal from 'decimal.js';
 
 export async function closePosition(
   connection: Connection,
@@ -36,11 +37,14 @@ export async function closePosition(
     return true;
   }
   const position = positions[0];
+  const marketId = position.marketId();
+
+  //Only close if a different optimal market has been selected
   if (position.marketId() === highestFundingRateId) {
     console.log("Still the same highest funding rate. Do nothing");
     return false;
   }
-  const marketId = position.marketId();
+
   const market = getMarketPda(exchangeAddress, marketId)[0];
   const marketData = await sdk.accountFetcher.getMarket(market);
   if (marketData === undefined) {
@@ -54,6 +58,15 @@ export async function closePosition(
     throw new Error("No position found");
   }
   const size = position.size();
+
+  //Only close if position is in the majority
+  if (new Decimal(marketData.accounting.skew.toString())
+      .mul(size.val)
+      .lt(0)) {
+    console.log("Skew is not in majority. Wait for better time to close it");
+    return;
+  }
+
   const positionSize = parseSize(size.val.div(10 ** 15).toNumber());
 
   // @ts-expect-error I don't know why this doesn't work but the type should be correct

@@ -34,7 +34,6 @@ export async function findHighestFundingRate(
         (new Decimal(market.account.accounting.skew.toString())
             .mul(marketWrapper.lastFundingRate().val)
             .lt(0))) {
-        console.log("Funding rate is for majority. Skip");
         continue;
     }
     const fundingRate = marketWrapper.lastFundingRate().val;
