@@ -2,19 +2,17 @@ import { getMarketPda, Market, MarketWrapper, ParclV3Sdk, ProgramAccount } from 
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 
-const TOKEN_MARKET_IDS = [23, 24];
 
 export async function findHighestFundingRate(
   sdk: ParclV3Sdk,
   exchangeAddress: PublicKey,
-  isTokensOnly: boolean
 ) {
   const exchange = await sdk.accountFetcher.getExchange(exchangeAddress);
   if (exchange === undefined) {
     throw new Error("Invalid exchange address");
   }
   const allMarketAddresses: PublicKey[] = [];
-  const marketIds = isTokensOnly ? TOKEN_MARKET_IDS : exchange.marketIds;
+  const marketIds = exchange.marketIds.filter(marketId => marketId <= 22);
   for (const marketId of marketIds) {
     if (marketId === 0) {
       continue;

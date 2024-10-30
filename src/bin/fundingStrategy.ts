@@ -8,7 +8,7 @@ import { findHighestFundingRate } from "./fundingStrategy/finder";
 import { createMarginAccount } from "./fundingStrategy/createMarginAccount";
 
 dotenv.config();
-const LEVERAGE = 5;
+const LEVERAGE = 20;
 
 (async function main() {
   console.log("Starting funding stretegy");
@@ -25,7 +25,6 @@ const LEVERAGE = 5;
   const close = process.argv.includes("close");
   const create = process.argv.includes("create");
   const open = process.argv.includes("open");
-  const isTokensOnly = process.argv.includes("tokens");
 
   const [exchangeAddress] = getExchangePda(0);
   const fundingStrategySigner = Keypair.fromSecretKey(bs58.decode(process.env.PRIVATE_KEY));
@@ -37,7 +36,7 @@ const LEVERAGE = 5;
     await createMarginAccount(connection, sdk, exchangeAddress, fundingStrategySigner);
   }
   if (open) {
-    const highestFundingRate = await findHighestFundingRate(sdk, exchangeAddress, isTokensOnly);
+    const highestFundingRate = await findHighestFundingRate(sdk, exchangeAddress);
     if (highestFundingRate.market === undefined) {
       console.log("No market found");
       await closePosition(
@@ -46,6 +45,7 @@ const LEVERAGE = 5;
           exchangeAddress,
           fundingStrategySigner,
           0,
+          true
       );
       return;
     }
@@ -55,7 +55,8 @@ const LEVERAGE = 5;
         sdk,
         exchangeAddress,
         fundingStrategySigner,
-        highestFundingRate.market.account.id
+        highestFundingRate.market.account.id,
+        false
       )
     ) {
       console.log("Opening a new position");
@@ -72,6 +73,6 @@ const LEVERAGE = 5;
     }
   }
   if (close) {
-    await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0);
+    await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0, true);
   }
 })();
