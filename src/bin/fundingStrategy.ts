@@ -38,7 +38,6 @@ const LEVERAGE = 20;
   }
   if (open) {
     const lowestSkew = await findLowestSkew(sdk, exchangeAddress);
-    console.log(lowestSkew);
     if (lowestSkew.market === undefined) {
       console.log("No market found");
       return;

@@ -21,8 +21,8 @@ export async function findLowestSkew(
     allMarketAddresses.push(market);
   }
   const allMarkets = await sdk.accountFetcher.getMarkets(allMarketAddresses);
-  const lowestSkew: { market: ProgramAccount<Market> | undefined; skew: bigint; fundingRate: Decimal} =
-    { market: undefined, skew: BigInt(0), fundingRate: new Decimal(0) };
+  const lowestSkew: { market: ProgramAccount<Market> | undefined; skew: Decimal; fundingRate: Decimal} =
+    { market: undefined, skew: new Decimal(0), fundingRate: new Decimal(0) };
   for (const market of allMarkets) {
     if (market === undefined) {
       continue;
@@ -35,14 +35,12 @@ export async function findLowestSkew(
             .lt(0))) {
         continue;
     }
-    if(abs(marketWrapper.market.accounting.skew) < lowestSkew.skew || lowestSkew.skew === BigInt(0)) {
+    const skew = new Decimal(market.account.accounting.skew.toString()).div(new Decimal(market.account.settings.skewScale.toString()));
+    if(Decimal.abs(skew).lt(lowestSkew.skew) || lowestSkew.skew.eq(new Decimal(0))) {
         lowestSkew.market = market;
-        lowestSkew.skew = abs(marketWrapper.market.accounting.skew);
+        lowestSkew.skew = Decimal.abs(skew);
         lowestSkew.fundingRate = marketWrapper.lastFundingRate().val;
     }
   }
   return lowestSkew;
-}
-function abs(value: bigint): bigint {
-  return value < 0n ? -value : value;
 }
