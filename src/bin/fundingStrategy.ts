@@ -2,10 +2,10 @@ import * as dotenv from "dotenv";
 import { getExchangePda, ParclV3Sdk } from "@parcl-oss/v3-sdk";
 import { Commitment, Connection, Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
-import { openPosition } from "./fundingStrategy/openPosition";
 import { closePosition } from "./fundingStrategy/closePosition";
-import { findHighestFundingRate } from "./fundingStrategy/finder";
+import { findLowestSkew } from "./fundingStrategy/finder";
 import { createMarginAccount } from "./fundingStrategy/createMarginAccount";
+import { openPosition } from './fundingStrategy/openPosition';
 
 dotenv.config();
 const LEVERAGE = 20;
@@ -25,6 +25,7 @@ const LEVERAGE = 20;
   const close = process.argv.includes("close");
   const create = process.argv.includes("create");
   const open = process.argv.includes("open");
+  const check = process.argv.includes("check");
 
   const [exchangeAddress] = getExchangePda(0);
   const fundingStrategySigner = Keypair.fromSecretKey(bs58.decode(process.env.PRIVATE_KEY));
@@ -36,41 +37,26 @@ const LEVERAGE = 20;
     await createMarginAccount(connection, sdk, exchangeAddress, fundingStrategySigner);
   }
   if (open) {
-    const highestFundingRate = await findHighestFundingRate(sdk, exchangeAddress);
-    if (highestFundingRate.market === undefined) {
+    const lowestSkew = await findLowestSkew(sdk, exchangeAddress);
+    console.log(lowestSkew);
+    if (lowestSkew.market === undefined) {
       console.log("No market found");
-      await closePosition(
-          connection,
-          sdk,
-          exchangeAddress,
-          fundingStrategySigner,
-          0,
-          true
-      );
       return;
     }
-    if (
-      await closePosition(
-        connection,
-        sdk,
-        exchangeAddress,
-        fundingStrategySigner,
-        highestFundingRate.market.account.id,
-        false
-      )
-    ) {
-      console.log("Opening a new position");
-      const isLong = highestFundingRate.value.lt(0);
-      await openPosition(
-        connection,
-        sdk,
-        exchangeAddress,
-        fundingStrategySigner,
-        highestFundingRate.market.account.id,
-        LEVERAGE,
-        isLong
-      );
-    }
+    console.log("Opening a new position");
+    const isLong = lowestSkew.fundingRate.lt(0);
+    await openPosition(
+      connection,
+      sdk,
+      exchangeAddress,
+      fundingStrategySigner,
+      lowestSkew.market.account.id,
+      LEVERAGE,
+      isLong
+    );
+  }
+  if (check) {
+    await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0, false);
   }
   if (close) {
     await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0, true);

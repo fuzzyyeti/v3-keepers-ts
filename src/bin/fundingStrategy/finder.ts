@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 
 
-export async function findHighestFundingRate(
+export async function findLowestSkew(
   sdk: ParclV3Sdk,
   exchangeAddress: PublicKey,
 ) {
@@ -21,24 +21,28 @@ export async function findHighestFundingRate(
     allMarketAddresses.push(market);
   }
   const allMarkets = await sdk.accountFetcher.getMarkets(allMarketAddresses);
-  const highestAbsoluteFundingRate: { market: ProgramAccount<Market> | undefined; value: Decimal } =
-    { market: undefined, value: new Decimal(0) };
+  const lowestSkew: { market: ProgramAccount<Market> | undefined; skew: bigint; fundingRate: Decimal} =
+    { market: undefined, skew: BigInt(0), fundingRate: new Decimal(0) };
   for (const market of allMarkets) {
     if (market === undefined) {
       continue;
     }
     const marketWrapper = new MarketWrapper(market.account);
+    // Make sure funding benefit is on the minority side
     if (
         (new Decimal(market.account.accounting.skew.toString())
             .mul(marketWrapper.lastFundingRate().val)
             .lt(0))) {
         continue;
     }
-    const fundingRate = marketWrapper.lastFundingRate().val;
-    if (Decimal.abs(fundingRate).gt(Decimal.abs(highestAbsoluteFundingRate.value))) {
-      highestAbsoluteFundingRate.market = market;
-      highestAbsoluteFundingRate.value = fundingRate;
+    if(abs(marketWrapper.market.accounting.skew) < lowestSkew.skew || lowestSkew.skew === BigInt(0)) {
+        lowestSkew.market = market;
+        lowestSkew.skew = abs(marketWrapper.market.accounting.skew);
+        lowestSkew.fundingRate = marketWrapper.lastFundingRate().val;
     }
   }
-  return highestAbsoluteFundingRate;
+  return lowestSkew;
+}
+function abs(value: bigint): bigint {
+  return value < 0n ? -value : value;
 }
