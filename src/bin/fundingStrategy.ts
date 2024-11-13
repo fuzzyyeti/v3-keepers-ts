@@ -25,6 +25,7 @@ const LEVERAGE = 20;
   const close = process.argv.includes("close");
   const create = process.argv.includes("create");
   const open = process.argv.includes("open");
+  const check = process.argv.includes("check");
 
   const [exchangeAddress] = getExchangePda(0);
   const fundingStrategySigner = Keypair.fromSecretKey(bs58.decode(process.env.PRIVATE_KEY));
@@ -71,6 +72,9 @@ const LEVERAGE = 20;
         isLong
       );
     }
+  }
+  if (check) {
+    await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0, false);
   }
   if (close) {
     await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0, true);
