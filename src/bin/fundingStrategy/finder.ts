@@ -27,22 +27,8 @@ export async function findHighestFundingRate(
     if (market === undefined) {
       continue;
     }
-    //Only use if skew is less than 2%, so there is a decent chance of flipping maker/taker before 24 hours
-    const size = parseFloat(market.account.accounting.size.toString());
-    const skew = parseFloat(market.account.accounting.skew.toString());
-    const skewPercent = .5 - (size/2 + skew/2)/size; //divide skew by 2 to match website
-    console.log(`marketId ${market.account.id}, skewPercent: ${skewPercent}`);
-    if(Math.abs(skewPercent) > 0.02) {
-        continue;
-    }
     const marketWrapper = new MarketWrapper(market.account);
     // Only use if funding rate pays the minority skew side
-    if (
-        (new Decimal(market.account.accounting.skew.toString())
-            .mul(marketWrapper.lastFundingRate().val)
-            .lt(0))) {
-        continue;
-    }
     const fundingRate = marketWrapper.lastFundingRate().val;
     if (Decimal.abs(fundingRate).gt(Decimal.abs(highestAbsoluteFundingRate.value))) {
       highestAbsoluteFundingRate.market = market;

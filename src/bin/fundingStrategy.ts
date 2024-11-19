@@ -46,7 +46,6 @@ const LEVERAGE = 20;
           exchangeAddress,
           fundingStrategySigner,
           0,
-          true
       );
       return;
     }
@@ -57,7 +56,6 @@ const LEVERAGE = 20;
         exchangeAddress,
         fundingStrategySigner,
         highestFundingRate.market.account.id,
-        false
       )
     ) {
       console.log("Opening a new position");
@@ -74,9 +72,9 @@ const LEVERAGE = 20;
     }
   }
   if (check) {
-    await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0, false);
+    await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0);
   }
   if (close) {
-    await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0, true);
+    await closePosition(connection, sdk, exchangeAddress, fundingStrategySigner, 0);
   }
 })();

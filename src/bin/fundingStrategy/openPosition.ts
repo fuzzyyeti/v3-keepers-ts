@@ -47,6 +47,7 @@ export async function openPosition(
 
   const fillPriceLimit = isLong ? price * 1.1 : price * 0.9;
   const acceptablePrice = parsePrice(fillPriceLimit);
+  console.log("opening position for", marketId);
   const openPositionTx = sdk
     .transactionBuilder()
     .modifyPosition(

@@ -15,7 +15,6 @@ import {
   parseSize,
 } from "@parcl-oss/v3-sdk";
 import { getPriceFromFeed } from "./utils";
-import Decimal from 'decimal.js';
 
 export async function closePosition(
   connection: Connection,
@@ -23,7 +22,6 @@ export async function closePosition(
   exchangeAddress: PublicKey,
   fundingStrategySigner: Keypair,
   highestFundingRateId: number,
-  force: boolean
 ) {
   const ma = getMarginAccountPda(exchangeAddress, fundingStrategySigner.publicKey, 0)[0];
   const latestBlockhash = await connection.getLatestBlockhash();
@@ -41,7 +39,7 @@ export async function closePosition(
   const marketId = position.marketId();
 
   //Only close if a different optimal market has been selected
-  if (!force && position.marketId() === highestFundingRateId) {
+  if (position.marketId() === highestFundingRateId) {
     console.log("Still the same highest funding rate. Do nothing");
     return false;
   }
@@ -61,21 +59,21 @@ export async function closePosition(
   const size = position.size();
 
   // Go ahead and close it if the funding rate is on the wrong side
-  if (size.val.mul(marketData.accounting.lastFundingRate).gt(0)) {
-    console.log("Funding rate is on the wrong side. Close it");
-    force = true;
-  }
+  // if (size.val.mul(marketData.accounting.lastFundingRate).gt(0)) {
+  //   console.log("Funding rate is on the wrong side. Close it");
+  //   force = true;
+  // }
 
   // Unless we want to force to wait for majority side to close for the best rate
-  if(!force) {
-    //Only close if position is in the majority
-    if (new Decimal(marketData.accounting.skew.toString())
-        .mul(size.val)
-        .lt(0)) {
-      console.log("Skew is not in majority. Wait for better time to close it");
-      return;
-    }
-  }
+  // if(!force) {
+  //   //Only close if position is in the majority
+  //   if (new Decimal(marketData.accounting.skew.toString())
+  //       .mul(size.val)
+  //       .lt(0)) {
+  //     console.log("Skew is not in majority. Wait for better time to close it");
+  //     return;
+  //   }
+  // }
 
   const positionSize = parseSize(size.val.div(10 ** 15).toNumber());
 
